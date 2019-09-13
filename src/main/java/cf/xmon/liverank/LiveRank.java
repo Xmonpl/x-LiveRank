@@ -1,13 +1,14 @@
 package cf.xmon.liverank;
 
-import cf.xmon.liverank.utils.DialogBoxUtil;
-import com.github.kevinsawicki.http.HttpRequest;
+        import cf.xmon.liverank.utils.DialogBoxUtil;
+        import com.github.kevinsawicki.http.HttpRequest;
 
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.util.logging.Logger;
+        import javax.swing.*;
+        import java.awt.*;
+        import java.awt.event.ActionEvent;
+        import java.awt.event.ActionListener;
+        import java.util.Arrays;
+        import java.util.logging.Logger;
 
 /**
  * @author Xmon
@@ -37,6 +38,8 @@ public class LiveRank {
     private CheckboxMenuItem on$startup$item = new CheckboxMenuItem("Uruchom przy starcie", false);
     /* set item close */
     private MenuItem close$item = new MenuItem("Zamknij");
+    /* processList from web */
+    private String[] processList;
 
     public static void main(String... args){
         System.setProperty("http.agent", "Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.4; en-US; rv:1.9.2.2) Gecko/20100316 Firefox/3.6.2");
@@ -51,11 +54,30 @@ public class LiveRank {
             this.logger.warning("Systemtray is not supported!");
             /* @TODO error */
         }
+        processListLoad();
         String req = HttpRequest.get("https://admin.playts.eu/manage/liveranks/backend.php")
                 .body();
         if (req.contains("Not connected")){
             DialogBoxUtil.errorBox("Włącz aplikacje TeamSpeak.", "x-LiveRank - Nie połączony!");
             System.exit(-1);
+        }
+        if (req.contains("Multiple users")){
+            JFrame frame = new JFrame();
+            Object result = JOptionPane.showInputDialog(frame, "Wpisz swój nick. (1:1)");
+            String check = HttpRequest.get("https://admin.playts.eu/manage/liveranks/backend.php?name=" + result).body();
+            if (check.equalsIgnoreCase("Incorrect name")){
+                result = JOptionPane.showInputDialog(frame, "Wpisz swój nick. (1:1)");
+                check = HttpRequest.get("https://admin.playts.eu/manage/liveranks/backend.php?name=" + result).body();
+                this.logger.info(result + " = " + check);
+                if (check.equalsIgnoreCase("Incorrect name")){
+                    DialogBoxUtil.errorBox("Naucz się pisać swój nick", "x-LiveRank - Weryfikacja");
+                    System.exit(-1);
+                }else{
+                    DialogBoxUtil.infoBox("Poprawnie zweryfikowano!", "x-LiveRank - Weryfikacja");
+                }
+            }else{
+                DialogBoxUtil.infoBox("Poprawnie zweryfikowano!", "x-LiveRank - Weryfikacja");
+            }
         }
 
         String nick = HttpRequest.get("https://admin.playts.eu/manage/liveranks/backend.php?nick")
@@ -68,6 +90,7 @@ public class LiveRank {
         close$item.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                HttpRequest.get("https://admin.playts.eu/manage/liveranks/backend.php?quit");
                 System.exit(0);
             }
         });
@@ -94,5 +117,10 @@ public class LiveRank {
             /* @TODO error */
         }
         this.logger.info("init completed.");
+    }
+    private void processListLoad(){
+        this.logger.info("processList loading..");
+        processList = HttpRequest.get("https://admin.playts.eu/manage/liveranks/data/processList.txt").body().split("\n");
+        this.logger.info("processList is loaded.");
     }
 }
