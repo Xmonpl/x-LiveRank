@@ -1,5 +1,6 @@
 package cf.xmon.liverank;
 
+import cf.xmon.liverank.utils.DialogBoxUtil;
 import com.github.kevinsawicki.http.HttpRequest;
 
 import javax.swing.*;
@@ -53,7 +54,7 @@ public class LiveRank {
         String req = HttpRequest.get("https://admin.playts.eu/manage/liveranks/backend.php")
                 .body();
         if (req.contains("Not connected")){
-            errorBox("Włącz aplikacje TeamSpeak.", "x-LiveRank - Nie połączony!");
+            DialogBoxUtil.errorBox("Włącz aplikacje TeamSpeak.", "x-LiveRank - Nie połączony!");
             System.exit(-1);
         }
 
@@ -93,13 +94,5 @@ public class LiveRank {
             /* @TODO error */
         }
         this.logger.info("init completed.");
-    }
-    public static void infoBox(String infoMessage, String titleBar)
-    {
-        JOptionPane.showMessageDialog(null, infoMessage, titleBar, JOptionPane.INFORMATION_MESSAGE);
-    }
-    public static void errorBox(String infoMessage, String titleBar)
-    {
-        JOptionPane.showMessageDialog(null, infoMessage, titleBar, JOptionPane.ERROR_MESSAGE);
     }
 }
