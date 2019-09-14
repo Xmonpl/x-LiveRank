@@ -6,6 +6,7 @@
       <element id="directory" name="META-INF">
         <element id="file-copy" path="$PROJECT_DIR$/META-INF/MANIFEST.MF" />
       </element>
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/com/github/kevinsawicki/http-request/6.0/http-request-6.0.jar" path-in-jar="/" />
     </root>
   </artifact>
 </component>

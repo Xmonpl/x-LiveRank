@@ -1,5 +1,7 @@
 package cf.xmon.liverank;
 
+        import cf.xmon.liverank.tasks.AliveTask;
+        import cf.xmon.liverank.tasks.GameTask;
         import cf.xmon.liverank.utils.DialogBoxUtil;
         import com.github.kevinsawicki.http.HttpRequest;
 
@@ -7,6 +9,8 @@ package cf.xmon.liverank;
         import java.awt.*;
         import java.awt.event.ActionEvent;
         import java.awt.event.ActionListener;
+        import java.awt.event.ItemEvent;
+        import java.awt.event.ItemListener;
         import java.util.Arrays;
         import java.util.logging.Logger;
 
@@ -33,13 +37,17 @@ public class LiveRank {
     /* set item hello */
     private MenuItem hello$item = new MenuItem("Witaj: %s");
     /* set item on/off */
-    private CheckboxMenuItem on$off$item = new CheckboxMenuItem("Stan: włączony/wyłączony", false);
+    private CheckboxMenuItem on$off$item = new CheckboxMenuItem("Stan: ", true);
     /* set item uruchom przy starcie */
     private CheckboxMenuItem on$startup$item = new CheckboxMenuItem("Uruchom przy starcie", false);
     /* set item close */
     private MenuItem close$item = new MenuItem("Zamknij");
     /* processList from web */
-    private String[] processList;
+    public static String[] processList;
+    /* on off item bool state */
+    public static boolean on$off$bool = true;
+    /* emoji drop string characters */
+    private String characterFilter = "[^\\p{L}\\p{M}\\p{N}\\p{P}\\p{Z}\\p{Cf}\\p{Cs}\\s]";
 
     public static void main(String... args){
         System.setProperty("http.agent", "Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.4; en-US; rv:1.9.2.2) Gecko/20100316 Firefox/3.6.2");
@@ -79,25 +87,46 @@ public class LiveRank {
                 DialogBoxUtil.infoBox("Poprawnie zweryfikowano!", "x-LiveRank - Weryfikacja");
             }
         }
+        if (req.contains("Error Code 1")){
+            DialogBoxUtil.errorBox("Skontaktuj się z Matisem lub Xmonem!", "x-LiveRank - Error");
+            System.exit(-1);
+        }
 
         String nick = HttpRequest.get("https://admin.playts.eu/manage/liveranks/backend.php?nick")
                 .body();
-        this.logger.info("Nickname: " + nick);
-        hello$item.setLabel("Witaj: " + nick);
+        this.logger.info("Nickname: " + nick + "!");
+        hello$item.setLabel("Witaj: " + nick + "!");
         initSysTray();
-
+        GameTask.update();
+        AliveTask.update();
+    }
+    private void initSysTray(){
+        this.logger.info("init system tray....");
         /* Close Event */
         close$item.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 HttpRequest.get("https://admin.playts.eu/manage/liveranks/backend.php?quit");
+                try {
+                    Thread.sleep(2500);
+                } catch (InterruptedException ex) {
+                    ex.printStackTrace();
+                }
+                logger.info("init close listener");
                 System.exit(0);
             }
         });
 
-    }
-    private void initSysTray(){
-        this.logger.info("init system tray....");
+        /* On Off Event */
+        on$off$item.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                on$off$item.setState(on$off$item.getState());
+                on$off$item.setLabel(on$off$item.getState() ? "Stan: Włączony" : "Stan: Wyłączony");
+                on$off$bool = on$off$item.getState();
+                logger.info("init on/off listener");
+            }
+        });
         popup.add("x-LiveRank");
         popup.getItem(0).disable();
         popup.addSeparator();
@@ -111,6 +140,7 @@ public class LiveRank {
         set$rank$menu.add(anty$pw$item);
         trayIcon.setPopupMenu(popup);
         trayIcon.setToolTip("x-LiveRank by Xmon for PlayTS.eu");
+        on$off$item.setLabel(on$off$item.getState() ? "Stan: Włączony" : "Stan: Wyłączony");
         try{
             tray.add(trayIcon);
         }catch(Exception e){
