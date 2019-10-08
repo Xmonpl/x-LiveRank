@@ -2,6 +2,11 @@ package cf.xmon.liverank.utils;
 
 import javax.swing.*;
 
+/**
+ * @author Xmon
+ * @version 1.0
+ */
+
 public class DialogBoxUtil {
     public static void infoBox(String infoMessage, String titleBar)
     {

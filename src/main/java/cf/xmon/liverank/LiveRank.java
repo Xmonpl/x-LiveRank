@@ -1,9 +1,11 @@
 package cf.xmon.liverank;
 
-        import cf.xmon.liverank.tasks.AliveTask;
         import cf.xmon.liverank.tasks.GameTask;
         import cf.xmon.liverank.utils.DialogBoxUtil;
         import com.github.kevinsawicki.http.HttpRequest;
+        import com.github.sarxos.winreg.HKey;
+        import com.github.sarxos.winreg.RegistryException;
+        import com.github.sarxos.winreg.WindowsRegistry;
 
         import javax.swing.*;
         import java.awt.*;
@@ -11,7 +13,8 @@ package cf.xmon.liverank;
         import java.awt.event.ActionListener;
         import java.awt.event.ItemEvent;
         import java.awt.event.ItemListener;
-        import java.util.Arrays;
+        import java.io.File;
+        import java.net.URISyntaxException;
         import java.util.logging.Logger;
 
 /**
@@ -46,8 +49,18 @@ public class LiveRank {
     public static String[] processList;
     /* on off item bool state */
     public static boolean on$off$bool = true;
+    /* antypoke bool state */
+    public static boolean antypoke$bool = false;
+    /* antypw bool state */
+    public static boolean antypw$bool = false;
+    /* startup bool state */
+    public static boolean startup$bool = false;
     /* emoji drop string characters */
     private String characterFilter = "[^\\p{L}\\p{M}\\p{N}\\p{P}\\p{Z}\\p{Cf}\\p{Cs}\\s]";
+    /* NickName Optinos */
+    public static String nickname;
+    public static boolean nickname$multiple;
+    private static String test$nick;
 
     public static void main(String... args){
         System.setProperty("http.agent", "Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.4; en-US; rv:1.9.2.2) Gecko/20100316 Firefox/3.6.2");
@@ -60,45 +73,48 @@ public class LiveRank {
         this.logger.info("App enabling.");
         if(!SystemTray.isSupported()){
             this.logger.warning("Systemtray is not supported!");
-            /* @TODO error */
+            /* @TODO error exception*/
         }
         processListLoad();
         String req = HttpRequest.get("https://admin.playts.eu/manage/liveranks/backend.php")
                 .body();
+        if (req.contains("Error Code 1")){
+            DialogBoxUtil.errorBox("Skontaktuj się z Matisem lub Xmonem!", "x-LiveRank - Error");
+            this.logger.warning("Error Code 1");
+            System.exit(-1);
+        }
         if (req.contains("Not connected")){
             DialogBoxUtil.errorBox("Włącz aplikacje TeamSpeak.", "x-LiveRank - Nie połączony!");
             System.exit(-1);
         }
         if (req.contains("Multiple users")){
-            JFrame frame = new JFrame();
-            Object result = JOptionPane.showInputDialog(frame, "Wpisz swój nick. (1:1)");
-            String check = HttpRequest.get("https://admin.playts.eu/manage/liveranks/backend.php?name=" + result).body();
-            if (check.equalsIgnoreCase("Incorrect name")){
-                result = JOptionPane.showInputDialog(frame, "Wpisz swój nick. (1:1)");
-                check = HttpRequest.get("https://admin.playts.eu/manage/liveranks/backend.php?name=" + result).body();
-                this.logger.info(result + " = " + check);
-                if (check.equalsIgnoreCase("Incorrect name")){
-                    DialogBoxUtil.errorBox("Naucz się pisać swój nick", "x-LiveRank - Weryfikacja");
-                    System.exit(-1);
+            do {
+                JFrame frame = new JFrame();
+                test$nick = JOptionPane.showInputDialog(frame, "Wpisz swój nick. (1:1)");
+                String check = HttpRequest.get("https://admin.playts.eu/manage/liveranks/backend.php?name=" +  test$nick).body();
+                this.logger.info(test$nick + " = " + check);
+                if (check.equalsIgnoreCase("Incorrect name")) {
+                    nickname$multiple = false;
+                    DialogBoxUtil.errorBox("Spróbuj ponownie!", "x-LiveRank - Weryfikacja");
+                    this.logger.info("good = false");
                 }else{
-                    DialogBoxUtil.infoBox("Poprawnie zweryfikowano!", "x-LiveRank - Weryfikacja");
+                    nickname$multiple = true;
+                    this.logger.info("good = true");
                 }
-            }else{
-                DialogBoxUtil.infoBox("Poprawnie zweryfikowano!", "x-LiveRank - Weryfikacja");
-            }
+            }while (!nickname$multiple);
+            DialogBoxUtil.infoBox("Poprawnie zweryfikowano!", "x-LiveRank - Weryfikacja");
         }
-        if (req.contains("Error Code 1")){
-            DialogBoxUtil.errorBox("Skontaktuj się z Matisem lub Xmonem!", "x-LiveRank - Error");
-            System.exit(-1);
+        if (!nickname$multiple) {
+            nickname = HttpRequest.get("https://admin.playts.eu/manage/liveranks/backend.php?nick")
+                    .body();
+        }else {
+            nickname = HttpRequest.get("https://admin.playts.eu/manage/liveranks/backend.php?name=" + test$nick +"&nick")
+                    .body();
         }
-
-        String nick = HttpRequest.get("https://admin.playts.eu/manage/liveranks/backend.php?nick")
-                .body();
-        this.logger.info("Nickname: " + nick + "!");
-        hello$item.setLabel("Witaj: " + nick + "!");
+        this.logger.info("Nickname: " + nickname.replaceAll(characterFilter, "") + "!");
+        hello$item.setLabel("Witaj: " + nickname.replaceAll(characterFilter, "") + "!");
         initSysTray();
         GameTask.update();
-        AliveTask.update();
     }
     private void initSysTray(){
         this.logger.info("init system tray....");
@@ -106,9 +122,16 @@ public class LiveRank {
         close$item.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                HttpRequest.get("https://admin.playts.eu/manage/liveranks/backend.php?quit");
+                //ReqUtil.req("https://admin.playts.eu/manage/liveranks/backend.php?quit", antypoke$bool ,antypw$bool, nickname$multiple, nickname);
+                if (!nickname$multiple) {
+                    HttpRequest.get("https://admin.playts.eu/manage/liveranks/backend.php?quit")
+                            .body();
+                }else {
+                    HttpRequest.get("https://admin.playts.eu/manage/liveranks/backend.php?name=" + test$nick +"&quit")
+                            .body();
+                }
                 try {
-                    Thread.sleep(2500);
+                    Thread.sleep(3000);
                 } catch (InterruptedException ex) {
                     ex.printStackTrace();
                 }
@@ -125,6 +148,50 @@ public class LiveRank {
                 on$off$item.setLabel(on$off$item.getState() ? "Stan: Włączony" : "Stan: Wyłączony");
                 on$off$bool = on$off$item.getState();
                 logger.info("init on/off listener");
+            }
+        });
+
+        /* Antypoke */
+        anty$poke$item.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                anty$poke$item.setState(anty$poke$item.getState());
+                antypoke$bool = anty$poke$item.getState();
+                logger.info("init on/off listener");
+            }
+        });
+
+        /* antyPW */
+        anty$pw$item.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                anty$pw$item.setState(anty$pw$item.getState());
+                antypw$bool = anty$pw$item.getState();
+                logger.info("init on/off listener");
+            }
+        });
+        /*  Enable on startup windows */
+        on$startup$item.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                on$startup$item.setState(on$startup$item.getState());
+                startup$bool = on$startup$item.getState();
+                WindowsRegistry reg = WindowsRegistry.getInstance();
+                if (startup$bool){
+                    try {
+                        reg.writeStringValue(HKey.HKCU, "SOFTWARE\\MICROSOFT\\WINDOWS\\CURRENTVERSION\\RUN", "LiveRank", new File(LiveRank.class.getProtectionDomain().getCodeSource().getLocation()
+                                .toURI()).getPath());
+                    } catch (Exception ex) {
+                        /* @TODO error exception*/
+                    }
+                }else{
+                    try {
+                        reg.deleteValue(HKey.HKCU, "SOFTWARE\\MICROSOFT\\WINDOWS\\CURRENTVERSION\\RUN", "LiveRank");
+                    } catch (Exception ex) {
+                        /* @TODO error exception*/
+                    }
+                }
+                reg = null;
             }
         });
         popup.add("x-LiveRank");
@@ -144,13 +211,11 @@ public class LiveRank {
         try{
             tray.add(trayIcon);
         }catch(Exception e){
-            /* @TODO error */
+            /* @TODO error exception*/
         }
         this.logger.info("init completed.");
     }
     private void processListLoad(){
-        this.logger.info("processList loading..");
-        processList = HttpRequest.get("https://admin.playts.eu/manage/liveranks/data/processList.txt").body().split("\n");
-        this.logger.info("processList is loaded.");
+        processList = HttpRequest.get("https://admin.playts.eu/manage/liveranks/data/processList.txt").body().split("\\r?\\n");
     }
 }

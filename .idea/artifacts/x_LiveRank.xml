@@ -7,6 +7,7 @@
         <element id="file-copy" path="$PROJECT_DIR$/META-INF/MANIFEST.MF" />
       </element>
       <element id="extracted-dir" path="$MAVEN_REPOSITORY$/com/github/kevinsawicki/http-request/6.0/http-request-6.0.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/com/github/sarxos/windows-registry-util/0.3/windows-registry-util-0.3.jar" path-in-jar="/" />
     </root>
   </artifact>
 </component>
