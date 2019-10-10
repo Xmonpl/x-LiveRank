@@ -1,18 +1,18 @@
 package cf.xmon.liverank.tasks;
 
 import cf.xmon.liverank.LiveRank;
+import cf.xmon.liverank.utils.DialogBoxUtil;
 import cf.xmon.liverank.utils.ReqUtil;
 import com.github.kevinsawicki.http.HttpRequest;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.Arrays;
-import java.util.Scanner;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * @author Xmon
@@ -51,12 +51,28 @@ public class GameTask {
                             }
                         });
                         if (alive == 0){
-                            logger.info("Alive Task " + HttpRequest.get("https://admin.playts.eu/manage/liveranks/backend.php").body());
-                            alive = 0;
+                            String body;
+                            if (LiveRank.nickname$multiple){
+                                body = HttpRequest.get("https://admin.playts.eu/manage/liveranks/backend.php?name=" + LiveRank.nickname).body();
+                            }else {
+                                body = HttpRequest.get("https://admin.playts.eu/manage/liveranks/backend.php").body();
+                            }
+                            if (body.contains("Error Code 1")){
+                                DialogBoxUtil.errorBox("Skontaktuj się z Matisem lub Xmonem!", "x-LiveRank - Error");
+                                logger.warning("Error Code 1");
+                                System.exit(-1);
+                            }
+                            if (body.contains("Not connected")){
+                                DialogBoxUtil.errorBox("Włącz aplikacje TeamSpeak.", "x-LiveRank - Nie połączony!");
+                                System.exit(-1);
+                            }
+                            logger.info("Alive Task ");
                         }
+                        alive = 0;
                         s = null;
                         input.close();
                         scan.close();
+                        p.destroy();
                     } catch (IOException e) {
                         /* @TODO error exception*/
                     }

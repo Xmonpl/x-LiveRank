@@ -115,6 +115,7 @@ public class LiveRank {
         hello$item.setLabel("Witaj: " + nickname.replaceAll(characterFilter, "") + "!");
         initSysTray();
         GameTask.update();
+        checkStartUp();
     }
     private void initSysTray(){
         this.logger.info("init system tray....");
@@ -122,7 +123,6 @@ public class LiveRank {
         close$item.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                //ReqUtil.req("https://admin.playts.eu/manage/liveranks/backend.php?quit", antypoke$bool ,antypw$bool, nickname$multiple, nickname);
                 if (!nickname$multiple) {
                     HttpRequest.get("https://admin.playts.eu/manage/liveranks/backend.php?quit")
                             .body();
@@ -132,8 +132,8 @@ public class LiveRank {
                 }
                 try {
                     Thread.sleep(3000);
-                } catch (InterruptedException ex) {
-                    ex.printStackTrace();
+                } catch (Exception ex) {
+                    /* @TODO error exception*/
                 }
                 logger.info("init close listener");
                 System.exit(0);
@@ -217,5 +217,17 @@ public class LiveRank {
     }
     private void processListLoad(){
         processList = HttpRequest.get("https://admin.playts.eu/manage/liveranks/data/processList.txt").body().split("\\r?\\n");
+    }
+    private void checkStartUp() {
+        WindowsRegistry reg = WindowsRegistry.getInstance();
+        try {
+            if (reg.readString(HKey.HKCU, "SOFTWARE\\MICROSOFT\\WINDOWS\\CURRENTVERSION\\RUN", "LiveRank") != null){
+                startup$bool = true;
+                on$startup$item.setState(true);
+            }
+            reg = null;
+        } catch (Exception e) {
+            /* @TODO error Exception */
+        }
     }
 }
