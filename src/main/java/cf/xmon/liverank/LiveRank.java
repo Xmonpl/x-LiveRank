@@ -2,6 +2,7 @@ package cf.xmon.liverank;
 
         import cf.xmon.liverank.tasks.GameTask;
         import cf.xmon.liverank.utils.DialogBoxUtil;
+        import cf.xmon.liverank.utils.ExceptionUtil;
         import com.github.kevinsawicki.http.HttpRequest;
         import com.github.sarxos.winreg.HKey;
         import com.github.sarxos.winreg.RegistryException;
@@ -73,7 +74,8 @@ public class LiveRank {
         this.logger.info("App enabling.");
         if(!SystemTray.isSupported()){
             this.logger.warning("Systemtray is not supported!");
-            /* @TODO error exception*/
+            DialogBoxUtil.errorBox("Twój system nie wspiera SystemTray'a", "x-LiveRank - Error");
+            System.exit(-1);
         }
         processListLoad();
         String req = HttpRequest.get("https://admin.playts.eu/manage/liveranks/backend.php")
@@ -133,7 +135,7 @@ public class LiveRank {
                 try {
                     Thread.sleep(3000);
                 } catch (Exception ex) {
-                    /* @TODO error exception*/
+                    ExceptionUtil.exception(ex);
                 }
                 logger.info("init close listener");
                 System.exit(0);
@@ -182,13 +184,13 @@ public class LiveRank {
                         reg.writeStringValue(HKey.HKCU, "SOFTWARE\\MICROSOFT\\WINDOWS\\CURRENTVERSION\\RUN", "LiveRank", new File(LiveRank.class.getProtectionDomain().getCodeSource().getLocation()
                                 .toURI()).getPath());
                     } catch (Exception ex) {
-                        /* @TODO error exception*/
+                        ExceptionUtil.exception(ex);
                     }
                 }else{
                     try {
                         reg.deleteValue(HKey.HKCU, "SOFTWARE\\MICROSOFT\\WINDOWS\\CURRENTVERSION\\RUN", "LiveRank");
                     } catch (Exception ex) {
-                        /* @TODO error exception*/
+                        ExceptionUtil.exception(ex);
                     }
                 }
                 reg = null;
@@ -211,7 +213,7 @@ public class LiveRank {
         try{
             tray.add(trayIcon);
         }catch(Exception e){
-            /* @TODO error exception*/
+            ExceptionUtil.exception(e);
         }
         this.logger.info("init completed.");
     }
@@ -227,7 +229,7 @@ public class LiveRank {
             }
             reg = null;
         } catch (Exception e) {
-            /* @TODO error Exception */
+            ExceptionUtil.exception(e);
         }
     }
 }

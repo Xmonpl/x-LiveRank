@@ -2,6 +2,7 @@ package cf.xmon.liverank.tasks;
 
 import cf.xmon.liverank.LiveRank;
 import cf.xmon.liverank.utils.DialogBoxUtil;
+import cf.xmon.liverank.utils.ExceptionUtil;
 import cf.xmon.liverank.utils.ReqUtil;
 import com.github.kevinsawicki.http.HttpRequest;
 
@@ -69,12 +70,12 @@ public class GameTask {
                             logger.info("Alive Task ");
                         }
                         alive = 0;
-                        s = null;
+                        s = "";
                         input.close();
                         scan.close();
                         p.destroy();
                     } catch (IOException e) {
-                        /* @TODO error exception*/
+                        ExceptionUtil.exception(e);
                     }
                 }
             }
