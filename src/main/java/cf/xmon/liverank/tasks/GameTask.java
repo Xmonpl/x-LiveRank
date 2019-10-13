@@ -65,7 +65,8 @@ public class GameTask {
                             }
                             if (body.contains("Not connected")){
                                 DialogBoxUtil.errorBox("Włącz aplikacje TeamSpeak.", "x-LiveRank - Nie połączony!");
-                                System.exit(-1);
+                                LiveRank.on$off$item.setState(false);
+                                LiveRank.on$off$bool = false;
                             }
                             logger.info("Alive Task ");
                         }

@@ -41,7 +41,7 @@ public class LiveRank {
     /* set item hello */
     private MenuItem hello$item = new MenuItem("Witaj: %s");
     /* set item on/off */
-    private CheckboxMenuItem on$off$item = new CheckboxMenuItem("Stan: ", true);
+    public static CheckboxMenuItem on$off$item = new CheckboxMenuItem("Stan: ", true);
     /* set item uruchom przy starcie */
     private CheckboxMenuItem on$startup$item = new CheckboxMenuItem("Uruchom przy starcie", false);
     /* set item close */
@@ -87,7 +87,8 @@ public class LiveRank {
         }
         if (req.contains("Not connected")){
             DialogBoxUtil.errorBox("Włącz aplikacje TeamSpeak.", "x-LiveRank - Nie połączony!");
-            System.exit(-1);
+            on$off$item.setState(false);
+            on$off$bool = false;
         }
         if (req.contains("Multiple users")){
             do {
@@ -129,7 +130,7 @@ public class LiveRank {
                     HttpRequest.get("https://admin.playts.eu/manage/liveranks/backend.php?quit")
                             .body();
                 }else {
-                    HttpRequest.get("https://admin.playts.eu/manage/liveranks/backend.php?name=" + test$nick +"&quit")
+                    HttpRequest.get("https://admin.playts.eu/manage/liveranks/backend.php?name=" + nickname +"&quit")
                             .body();
                 }
                 try {
@@ -149,6 +150,47 @@ public class LiveRank {
                 on$off$item.setState(on$off$item.getState());
                 on$off$item.setLabel(on$off$item.getState() ? "Stan: Włączony" : "Stan: Wyłączony");
                 on$off$bool = on$off$item.getState();
+                if (on$off$bool){
+                    processListLoad();
+                    String req = HttpRequest.get("https://admin.playts.eu/manage/liveranks/backend.php")
+                            .body();
+                    if (req.contains("Error Code 1")){
+                        DialogBoxUtil.errorBox("Skontaktuj się z Matisem lub Xmonem!", "x-LiveRank - Error");
+                        logger.warning("Error Code 1");
+                        System.exit(-1);
+                    }
+                    if (req.contains("Not connected")){
+                        DialogBoxUtil.errorBox("Włącz aplikacje TeamSpeak.", "x-LiveRank - Nie połączony!");
+                        on$off$item.setState(false);
+                        on$off$bool = false;
+                    }
+                    if (req.contains("Multiple users")){
+                        do {
+                            JFrame frame = new JFrame();
+                            test$nick = JOptionPane.showInputDialog(frame, "Wpisz swój nick. (1:1)");
+                            String check = HttpRequest.get("https://admin.playts.eu/manage/liveranks/backend.php?name=" + test$nick).body();
+                            logger.info(test$nick + " = " + check);
+                            if (check.equalsIgnoreCase("Incorrect name")) {
+                                nickname$multiple = false;
+                                DialogBoxUtil.errorBox("Spróbuj ponownie!", "x-LiveRank - Weryfikacja");
+                                logger.info("good = false");
+                            }else{
+                                nickname$multiple = true;
+                                logger.info("good = true");
+                            }
+                        }while (!nickname$multiple);
+                        DialogBoxUtil.infoBox("Poprawnie zweryfikowano!", "x-LiveRank - Weryfikacja");
+                    }
+                    if (!nickname$multiple) {
+                        nickname = HttpRequest.get("https://admin.playts.eu/manage/liveranks/backend.php?nick")
+                                .body();
+                    }else {
+                        nickname = HttpRequest.get("https://admin.playts.eu/manage/liveranks/backend.php?name=" + test$nick +"&nick")
+                                .body();
+                    }
+                    logger.info("Nickname: " + nickname.replaceAll(characterFilter, "") + "!");
+                    hello$item.setLabel("Witaj: " + nickname.replaceAll(characterFilter, "") + "!");
+                }
                 logger.info("init on/off listener");
             }
         });
@@ -181,8 +223,7 @@ public class LiveRank {
                 WindowsRegistry reg = WindowsRegistry.getInstance();
                 if (startup$bool){
                     try {
-                        reg.writeStringValue(HKey.HKCU, "SOFTWARE\\MICROSOFT\\WINDOWS\\CURRENTVERSION\\RUN", "LiveRank", new File(LiveRank.class.getProtectionDomain().getCodeSource().getLocation()
-                                .toURI()).getPath());
+                        reg.writeStringValue(HKey.HKCU, "SOFTWARE\\MICROSOFT\\WINDOWS\\CURRENTVERSION\\RUN", "LiveRank", "\"java -Xms32M -Xmx64M -jar " + new File(LiveRank.class.getProtectionDomain().getCodeSource().getLocation().toURI()).getPath() + "\"");
                     } catch (Exception ex) {
                         ExceptionUtil.exception(ex);
                     }
